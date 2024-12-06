@@ -1,6 +1,14 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+// Define roles in a constant object
+export const USER_ROLES = {
+  USER: 'user',
+  MENTOR: 'mentor',
+  MENTEE: 'mentee',
+  ADMIN: 'admin'
+} as const;
+
 const notificationTypes = [
   'message',
   'connection',
@@ -11,8 +19,7 @@ const notificationTypes = [
   'session_completed'
 ] as const;
 
-const userRoles = ['user', 'mentor', 'mentee', 'admin'] as const;
-
+// Create the schema
 const userSchema = new mongoose.Schema({
   name: String,
   email: {
@@ -33,8 +40,8 @@ const userSchema = new mongoose.Schema({
   title: String,
   role: {
     type: String,
-    enum: userRoles,
-    default: 'user'
+    enum: Object.values(USER_ROLES),
+    default: USER_ROLES.USER
   },
   skills: [String],
   avatar: String,
@@ -82,8 +89,15 @@ userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 
-export type UserRole = typeof userRoles[number];
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type NotificationType = typeof notificationTypes[number];
 
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+// Check if the model exists before creating a new one
+let User: mongoose.Model<any>;
+try {
+  User = mongoose.model('User');
+} catch {
+  User = mongoose.model('User', userSchema);
+}
+
 export default User; 

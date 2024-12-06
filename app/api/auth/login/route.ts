@@ -1,52 +1,63 @@
+import { NextResponse } from 'next/server'
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
-import jwt from "jsonwebtoken"
-import { NextResponse } from "next/server"
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    await connectDB()
-    const { email, password } = await req.json()
+    const { email, password } = await request.json()
 
-    const user = await User.findOne({ email }).select('+password')
-    if (!user || !(await user.matchPassword(password))) {
+    // Connect to database
+    await connectDB()
+
+    // Find user
+    const user = await User.findOne({ email })
+    if (!user) {
       return NextResponse.json(
         { message: "Invalid credentials" },
         { status: 401 }
       )
     }
 
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password)
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { message: "Invalid credentials" },
+        { status: 401 }
+      )
+    }
+
+    // Generate JWT
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET as string,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     )
 
-    const response = NextResponse.json({
-      success: true,
-      message: "Login successful",
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      }
-    }, { status: 200 })
+    // Create response with cookie
+    const response = NextResponse.json(
+      { message: "Login successful" },
+      { status: 200 }
+    )
 
-    // Set cookie with secure settings
-    response.cookies.set('token', token, {
+    // Set HTTP-only cookie
+    response.cookies.set({
+      name: 'token',
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 30 * 24 * 60 * 60 // 30 days
+      maxAge: 7 * 24 * 60 * 60 // 7 days
     })
 
     return response
-
   } catch (error) {
+    console.error('Login error:', error)
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { message: "Internal server error" },
       { status: 500 }
     )
   }
