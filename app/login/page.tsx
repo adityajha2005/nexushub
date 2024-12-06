@@ -1,10 +1,14 @@
+"use client"
+
 import { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { useSearchParams, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { UserAuthForm } from "@/components/user-auth-form"
+import { toast } from "@/components/ui/use-toast"
 
 export const metadata: Metadata = {
   title: "Login | NEXUSHUB",
@@ -12,6 +16,24 @@ export const metadata: Metadata = {
 }
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect')
+  const router = useRouter()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // ... existing login logic ...
+
+    if (response.ok) {
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      })
+      // Redirect to the original destination if available
+      router.push(redirect || '/dashboard')
+    }
+  }
+
   return (
     <div className="relative h-[calc(100vh-64px)] flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">

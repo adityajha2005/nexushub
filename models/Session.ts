@@ -23,11 +23,9 @@ const sessionSchema = new mongoose.Schema({
     type: String,
     enum: ['scheduled', 'completed', 'cancelled'],
     default: 'scheduled'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 const Session = mongoose.models.Session || mongoose.model('Session', sessionSchema);

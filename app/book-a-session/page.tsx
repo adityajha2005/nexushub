@@ -73,7 +73,6 @@ export default function BookASession() {
           date: date.toISOString(),
           time: selectedTime,
         }),
-        credentials: 'include',
       })
 
       const data = await response.json()
@@ -83,16 +82,16 @@ export default function BookASession() {
       }
 
       toast({
-        title: "Session Booked!",
-        description: `Your session with ${data.session.mentor.name} is scheduled for ${new Date(data.session.date).toLocaleDateString()} at ${data.session.time}`,
+        title: "Success",
+        description: "Session booked successfully",
       })
       
-      router.push('/dashboard?tab=sessions')
+      router.push('/dashboard')
     } catch (error) {
       console.error('Booking error:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to book session. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to book session",
         variant: "destructive",
       })
     } finally {

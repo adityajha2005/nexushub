@@ -13,17 +13,13 @@ if (!cached) {
 }
 
 export async function connectDB() {
-  if (cached.conn) {
-    console.log('Using cached database connection')
-    return cached.conn
-  }
-
   try {
-    console.log('Connecting to MongoDB...')
-    const conn = await mongoose.connect(MONGODB_URI)
-    console.log(`MongoDB Connected: ${conn.connection.host}`)
-    cached.conn = conn
-    return conn
+    if (mongoose.connection.readyState >= 1) {
+      return
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI!)
+    console.log('MongoDB connected successfully')
   } catch (error) {
     console.error('MongoDB connection error:', error)
     throw error

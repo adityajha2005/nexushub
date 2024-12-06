@@ -28,15 +28,39 @@ export default function FindAMentor() {
   useEffect(() => {
     const fetchMentors = async () => {
       try {
+        setIsLoading(true)
         const response = await fetch('/api/mentors')
-        const data = await response.json()
-        if (response.ok) {
-          setMentors(data.mentors)
-        } else {
-          throw new Error(data.message)
+        const text = await response.text() // First get the raw text
+        
+        console.log('Raw response:', text) // Log the raw response
+        
+        try {
+          const data = JSON.parse(text) // Then try to parse it
+          if (response.ok) {
+            if (Array.isArray(data.mentors)) {
+              setMentors(data.mentors)
+            } else {
+              console.error('Mentors data is not an array:', data)
+              toast({
+                title: "Error",
+                description: "Invalid data format received from server",
+                variant: "destructive",
+              })
+            }
+          } else {
+            throw new Error(data.message || 'Failed to fetch mentors')
+          }
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError)
+          console.error('Response text:', text)
+          toast({
+            title: "Error",
+            description: "Invalid response format from server",
+            variant: "destructive",
+          })
         }
       } catch (error) {
-        console.error('Error fetching mentors:', error)
+        console.error('Fetch error:', error)
         toast({
           title: "Error",
           description: "Failed to load mentors. Please try again later.",
@@ -56,18 +80,6 @@ export default function FindAMentor() {
   )
 
   const handleScheduleSession = (mentorId: string) => {
-    const token = document.cookie.includes('token')
-    
-    if (!token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please login to schedule a session",
-        variant: "destructive",
-      })
-      router.push('/login')
-      return
-    }
-
     router.push(`/book-a-session?mentor=${mentorId}`)
   }
 

@@ -33,12 +33,18 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  password: String,
-  role: {
+  password: {
     type: String,
-    enum: ['mentee', 'mentor'],
     required: true
   },
+  role: {
+    type: String,
+    enum: ['mentor', 'mentee', 'admin'],
+    required: true
+  },
+  username: String,
+  bio: String,
+  skills: [String],
   expertise: [String],
   experience: Number,
   rating: Number,
@@ -52,6 +58,8 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
+}, {
+  timestamps: true
 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
