@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         name: user.name,
         username: user.username,
         bio: user.bio,
-        skills: user.skills,
+        skills: user.skills || [],
         avatar: user.avatar,
         role: user.role
       }))

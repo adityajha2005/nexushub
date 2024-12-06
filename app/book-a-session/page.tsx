@@ -1,40 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
-const mentors = [
-  {
-    id: "1",
-    name: "Dr. Emily Chen",
-    expertise: ["Machine Learning", "Data Science", "Python"],
-    experience: 10,
-    rating: 4.9,
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: "2",
-    name: "John Smith",
-    expertise: ["Web Development", "React", "Node.js"],
-    experience: 8,
-    rating: 4.7,
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: "3",
-    name: "Sarah Johnson",
-    expertise: ["UX Design", "UI Design", "Figma"],
-    experience: 12,
-    rating: 4.8,
-    avatar: "/placeholder.svg",
-  },
-]
 
 const timeSlots = [
   "09:00 AM",
@@ -48,10 +21,29 @@ const timeSlots = [
 export default function BookASession() {
   const searchParams = useSearchParams()
   const preselectedMentorId = searchParams.get('mentor')
+  const router = useRouter()
   
   const [selectedMentor, setSelectedMentor] = useState<string>(preselectedMentorId || "")
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [mentors, setMentors] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        const response = await fetch('/api/mentors')
+        const data = await response.json()
+        if (response.ok) {
+          setMentors(data.mentors)
+        }
+      } catch (error) {
+        console.error('Error fetching mentors:', error)
+      }
+    }
+
+    fetchMentors()
+  }, [])
 
   useEffect(() => {
     if (preselectedMentorId) {
@@ -70,27 +62,41 @@ export default function BookASession() {
     }
 
     try {
-      // Here you would typically make an API call to book the session
-      // const response = await fetch('/api/sessions', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     mentorId: selectedMentor,
-      //     date: date.toISOString(),
-      //     time: selectedTime,
-      //   }),
-      // })
+      setIsLoading(true)
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mentorId: selectedMentor,
+          date: date.toISOString(),
+          time: selectedTime,
+        }),
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to book session')
+      }
 
       toast({
-        title: "Success",
-        description: "Your session has been booked successfully!",
+        title: "Session Booked!",
+        description: `Your session with ${data.session.mentor.name} is scheduled for ${new Date(data.session.date).toLocaleDateString()} at ${data.session.time}`,
       })
+      
+      router.push('/dashboard?tab=sessions')
     } catch (error) {
+      console.error('Booking error:', error)
       toast({
         title: "Error",
-        description: "Failed to book session. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to book session. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -111,7 +117,7 @@ export default function BookASession() {
               </SelectTrigger>
               <SelectContent>
                 {mentors.map((mentor) => (
-                  <SelectItem key={mentor.id} value={mentor.id}>
+                  <SelectItem key={mentor._id} value={mentor._id}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={mentor.avatar} alt={mentor.name} />
@@ -148,15 +154,15 @@ export default function BookASession() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Select Time</CardTitle>
-            <CardDescription>Choose an available time slot</CardDescription>
+            <CardDescription>Choose your preferred time slot</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Select onValueChange={setSelectedTime} value={selectedTime}>
               <SelectTrigger>
-                <SelectValue placeholder="Select time slot" />
+                <SelectValue placeholder="Select a time slot" />
               </SelectTrigger>
               <SelectContent>
                 {timeSlots.map((time) => (
@@ -170,9 +176,13 @@ export default function BookASession() {
             <Button 
               className="w-full" 
               onClick={handleBooking}
-              disabled={!selectedMentor || !date || !selectedTime}
+              disabled={!selectedMentor || !date || !selectedTime || isLoading}
             >
-              Book Session with {selectedMentor ? mentors.find(m => m.id === selectedMentor)?.name : 'Mentor'}
+              {isLoading ? (
+                "Booking..."
+              ) : (
+                `Book Session with ${selectedMentor ? mentors.find(m => m._id === selectedMentor)?.name : 'Mentor'}`
+              )}
             </Button>
           </CardContent>
         </Card>

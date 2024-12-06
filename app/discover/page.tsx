@@ -20,7 +20,7 @@ interface User {
   name: string
   username?: string
   bio?: string
-  skills: string[]
+  skills?: string[]
   avatar?: string
   role: string
 }
@@ -131,7 +131,7 @@ export default function DiscoverPage() {
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">{user.role}</Badge>
-                  {user.skills.map((skill) => (
+                  {user.skills?.map((skill) => (
                     <Badge key={skill} variant="outline">
                       {skill}
                     </Badge>
