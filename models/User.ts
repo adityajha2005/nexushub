@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const notificationSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['connection_request', 'connection_accepted', 'session_scheduled'],
+    enum: ['connection_request', 'connection_accepted', 'session_scheduled', 'session_cancelled'],
     required: true
   },
   from: {
