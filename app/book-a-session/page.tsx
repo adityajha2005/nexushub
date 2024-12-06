@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -45,11 +46,20 @@ const timeSlots = [
 ]
 
 export default function BookASession() {
-  const [selectedMentor, setSelectedMentor] = useState<string>("")
+  const searchParams = useSearchParams()
+  const preselectedMentorId = searchParams.get('mentor')
+  
+  const [selectedMentor, setSelectedMentor] = useState<string>(preselectedMentorId || "")
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string>("")
 
-  const handleBooking = () => {
+  useEffect(() => {
+    if (preselectedMentorId) {
+      setSelectedMentor(preselectedMentorId)
+    }
+  }, [preselectedMentorId])
+
+  const handleBooking = async () => {
     if (!selectedMentor || !date || !selectedTime) {
       toast({
         title: "Error",
@@ -59,10 +69,29 @@ export default function BookASession() {
       return
     }
 
-    toast({
-      title: "Success",
-      description: "Your session has been booked successfully!",
-    })
+    try {
+      // Here you would typically make an API call to book the session
+      // const response = await fetch('/api/sessions', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     mentorId: selectedMentor,
+      //     date: date.toISOString(),
+      //     time: selectedTime,
+      //   }),
+      // })
+
+      toast({
+        title: "Success",
+        description: "Your session has been booked successfully!",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to book session. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (

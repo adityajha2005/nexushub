@@ -1,43 +1,78 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+const notificationSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['connection_request', 'connection_accepted', 'connection_declined', 'message'],
+    required: true
+  },
+  from: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  read: {
+    type: Boolean,
+    default: false
+  },
+  message: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Please add a name'],
+  },
   email: {
     type: String,
     required: [true, 'Please add an email'],
     unique: true,
-    match: [/\S+@\S+\.\S+/, 'Please enter a valid email'],
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      'Please add a valid email',
+    ],
   },
   password: {
     type: String,
     required: [true, 'Please add a password'],
-    minlength: 8,
+    minlength: 6,
     select: false,
   },
-  name: {
+  role: {
     type: String,
-    required: [true, 'Please add a name'],
+    enum: ['mentor', 'mentee'],
+    default: 'mentee',
   },
   username: {
     type: String,
     unique: true,
     sparse: true,
   },
-  bio: {
-    type: String,
-    maxlength: 160,
-  },
-  skills: [{
-    type: String,
+  bio: String,
+  skills: [String],
+  interests: [String],
+  avatar: String,
+  connections: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'declined'],
+      default: 'pending'
+    },
+    initiator: {
+      type: Boolean,
+      default: false
+    }
   }],
-  avatar: {
-    type: String,
-  },
-  role: {
-    type: String,
-    enum: ['user', 'mentor', 'admin'],
-    default: 'user',
-  },
+  notifications: [notificationSchema],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -58,4 +93,5 @@ userSchema.methods.matchPassword = async function(enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-export default mongoose.models.User || mongoose.model('User', userSchema); 
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+export default User; 

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { UserNav } from "@/components/user-nav"
+import { NotificationsMenu } from "@/components/notifications"
 
 interface User {
   id: string;
@@ -67,6 +68,12 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-6">
             <Link
+              href="/discover"
+              className="transition-colors hover:text-foreground/80"
+            >
+              Discover
+            </Link>
+            <Link
               href="/find-a-mentor"
               className="transition-colors hover:text-foreground/80"
             >
@@ -83,7 +90,10 @@ export function Navbar() {
             {loading ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
             ) : user ? (
-              <UserNav user={user} />
+              <>
+                <NotificationsMenu />
+                <UserNav user={user} />
+              </>
             ) : (
               <Link href="/login">
                 <Button variant="ghost">Login</Button>

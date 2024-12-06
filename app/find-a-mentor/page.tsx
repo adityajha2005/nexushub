@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 const mentors = [
   {
@@ -31,11 +33,31 @@ const mentors = [
 
 export default function FindAMentor() {
   const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter()
+  const { toast } = useToast()
 
   const filteredMentors = mentors.filter(mentor => 
     mentor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     mentor.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()))
   )
+
+  const handleScheduleSession = (mentorId: number) => {
+    // Check if user is authenticated
+    const token = document.cookie.includes('token')
+    
+    if (!token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to schedule a session",
+        variant: "destructive",
+      })
+      router.push('/login')
+      return
+    }
+
+    // Navigate to book-a-session page with mentor pre-selected
+    router.push(`/book-a-session?mentor=${mentorId}`)
+  }
 
   return (
     <div className="container mx-auto px-4 pt-20">
@@ -79,7 +101,12 @@ export default function FindAMentor() {
               </Badge>
             </CardContent>
             <CardFooter>
-              <Button className="w-full">Schedule Session</Button>
+              <Button 
+                className="w-full"
+                onClick={() => handleScheduleSession(mentor.id)}
+              >
+                Schedule Session
+              </Button>
             </CardFooter>
           </Card>
         ))}

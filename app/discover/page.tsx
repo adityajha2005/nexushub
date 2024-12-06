@@ -1,105 +1,153 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useToast } from "@/components/ui/use-toast"
 
-type User = {
+interface User {
   id: string
   name: string
-  username: string
+  username?: string
+  bio?: string
   skills: string[]
-  avatar: string
+  avatar?: string
+  role: string
 }
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    username: "alice_j",
-    skills: ["React", "Node.js", "TypeScript"],
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    username: "bob_smith",
-    skills: ["Python", "Machine Learning", "Data Science"],
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: "3",
-    name: "Carol Williams",
-    username: "carol_w",
-    skills: ["Java", "Spring Boot", "Microservices"],
-    avatar: "/placeholder.svg",
-  },
-]
-
 export default function DiscoverPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [role, setRole] = useState("")
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const { toast } = useToast()
 
-  const handleSearch = (event: React.FormEvent) => {
-    event.preventDefault()
-    // In a real application, you would fetch users from an API here
-    const filteredUsers = mockUsers.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.skills.some((skill) =>
-          skill.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    )
-    setUsers(filteredUsers)
+  const fetchUsers = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (role) params.append('role', role)
+      if (selectedSkills.length) params.append('skills', selectedSkills.join(','))
+
+      const response = await fetch(`/api/users?${params}`)
+      const data = await response.json()
+      setUsers(data.users)
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [search, role, selectedSkills])
+
+  const handleConnect = async (userId: string) => {
+    try {
+      const response = await fetch('/api/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUserId: userId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send connection request')
+      }
+
+      toast({
+        title: "Success",
+        description: "Connection request sent successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send connection request",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">Discover Mentors and Mentees</h1>
-      <form onSubmit={handleSearch} className="mb-8">
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Search by name, username, or skill"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit">Search</Button>
-        </div>
-      </form>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {users.map((user) => (
-          <Card key={user.id}>
-            <CardHeader className="flex flex-row items-center gap-4">
-              <Avatar>
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback>{user.name[0]}</AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle>{user.name}</CardTitle>
-                <p className="text-sm text-gray-500">@{user.username}</p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-2">Skills:</p>
-              <div className="flex flex-wrap gap-2">
-                {user.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-2 py-1 bg-gray-100 rounded-full text-xs"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <h1 className="text-3xl font-bold mb-8">Discover Users</h1>
+      
+      <div className="flex gap-4 mb-8">
+        <Input
+          placeholder="Search users..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        
+        <Select value={role} onValueChange={setRole}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="mentor">Mentor</SelectItem>
+            <SelectItem value="mentee">Mentee</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {users.map((user) => (
+            <Card key={user.id}>
+              <CardHeader className="flex flex-row items-center gap-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={user.avatar || "/placeholder.svg"} />
+                  <AvatarFallback>
+                    {user.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle>{user.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    @{user.username || "anonymous"}
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {user.bio && (
+                  <p className="text-sm text-muted-foreground mb-4">{user.bio}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">{user.role}</Badge>
+                  {user.skills.map((skill) => (
+                    <Badge key={skill} variant="outline">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => handleConnect(user.id)}
+                >
+                  Connect
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
