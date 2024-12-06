@@ -14,57 +14,96 @@ export async function POST(request: Request) {
     }
 
     const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
-    const { targetUserId } = await request.json()
+    const body = await request.json()
+    
+    const { mentorId } = body
 
-    await connectDB()
-
-    // Get both users
-    const [currentUser, targetUser] = await Promise.all([
-      User.findById(decoded.id),
-      User.findById(targetUserId)
-    ])
-
-    if (!currentUser || !targetUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 })
-    }
-
-    // Check if connection already exists
-    const existingConnection = currentUser.connections.find(
-      conn => conn.user.toString() === targetUserId
-    )
-
-    if (existingConnection) {
+    if (!mentorId) {
       return NextResponse.json(
-        { message: "Connection already exists" },
+        { message: "Mentor ID is required" },
         { status: 400 }
       )
     }
 
-    // Create connection request
-    currentUser.connections.push({
-      user: targetUserId,
-      status: 'pending',
-      initiator: true
-    })
+    await connectDB()
 
-    targetUser.connections.push({
-      user: decoded.id,
-      status: 'pending',
-      initiator: false
-    })
+    // Get both users in one go
+    const [mentee, mentor] = await Promise.all([
+      User.findById(decoded.id),
+      User.findById(mentorId)
+    ])
 
-    // Add notification for target user
-    targetUser.notifications.push({
+    // Check mentee exists
+    if (!mentee) {
+      return NextResponse.json(
+        { message: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    // Check mentor exists and is a mentor
+    if (!mentor || mentor.role !== 'mentor') {
+      return NextResponse.json(
+        { message: "Invalid mentor" },
+        { status: 400 }
+      )
+    }
+
+    // Check if there's already a connection or pending request
+    if (mentor.pendingConnections.includes(decoded.id) || 
+        mentor.connections.includes(decoded.id) ||
+        mentee.pendingConnections.includes(mentorId) || 
+        mentee.connections.includes(mentorId)) {
+      return NextResponse.json(
+        { message: "Connection request already sent or already connected" },
+        { status: 400 }
+      )
+    }
+
+    // Create notifications for both users
+    const mentorNotification = {
       type: 'connection_request',
       from: decoded.id,
-      message: `${currentUser.name} wants to connect with you`
+      message: `${mentee.name} wants to connect with you`,
+      read: false,
+      createdAt: new Date()
+    }
+
+    const menteeNotification = {
+      type: 'connection_request',
+      from: decoded.id,
+      message: `You sent a connection request to ${mentor.name}`,
+      read: false,
+      createdAt: new Date()
+    }
+
+    // Update both users atomically with their respective notifications
+    await Promise.all([
+      // Update mentor
+      User.findByIdAndUpdate(mentorId, {
+        $push: {
+          pendingConnections: decoded.id,
+          notifications: mentorNotification
+        }
+      }),
+      // Update mentee with their own notification
+      User.findByIdAndUpdate(decoded.id, {
+        $push: {
+          pendingConnections: mentorId,
+          notifications: menteeNotification
+        }
+      })
+    ])
+
+    return NextResponse.json({
+      message: "Connection request sent successfully",
+      notifications: {
+        mentor: mentorNotification,
+        mentee: menteeNotification
+      }
     })
-
-    await Promise.all([currentUser.save(), targetUser.save()])
-
-    return NextResponse.json({ message: "Connection request sent" })
   } catch (error) {
-    console.error("Connection request error:", error)
+    console.error('Connection request error:', error)
     return NextResponse.json(
       { message: "Failed to send connection request" },
       { status: 500 }

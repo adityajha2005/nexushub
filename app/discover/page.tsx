@@ -61,11 +61,14 @@ export default function DiscoverPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ targetUserId: userId }),
+        credentials: 'include',
+        body: JSON.stringify({ mentorId: userId }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to send connection request')
+        throw new Error(data.message || 'Failed to send connection request')
       }
 
       toast({
@@ -73,9 +76,10 @@ export default function DiscoverPage() {
         description: "Connection request sent successfully",
       })
     } catch (error) {
+      console.error('Connection error:', error)
       toast({
         title: "Error",
-        description: "Failed to send connection request",
+        description: error instanceof Error ? error.message : "Failed to send connection request",
         variant: "destructive",
       })
     }

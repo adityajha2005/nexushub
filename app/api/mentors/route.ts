@@ -1,14 +1,25 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
+import jwt from "jsonwebtoken"
+import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const cookieStore = cookies()
+    const token = cookieStore.get("token")
+    let userId = null
+
+    if (token) {
+      const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
+      userId = decoded.id
+    }
+
     await connectDB()
     console.log('DB connection successful')
     
     const mentors = await User.find({ role: 'mentor' })
-      .select('_id name expertise experience rating avatar')
+      .select('_id name expertise experience rating avatar pendingConnections connections')
       .lean()
 
     console.log('Raw mentors data:', JSON.stringify(mentors, null, 2))
@@ -28,17 +39,25 @@ export async function GET() {
         return null
       }
 
+      let connectionStatus = 'none'
+      if (userId) {
+        if (mentor.connections?.includes(userId)) {
+          connectionStatus = 'connected'
+        } else if (mentor.pendingConnections?.includes(userId)) {
+          connectionStatus = 'pending'
+        }
+      }
+
       return {
         _id: mentor._id ? mentor._id.toString() : '',
         name: mentor.name || '',
         expertise: Array.isArray(mentor.expertise) ? mentor.expertise : [],
         experience: typeof mentor.experience === 'number' ? mentor.experience : 0,
         rating: typeof mentor.rating === 'number' ? mentor.rating : 0,
-        avatar: mentor.avatar || '/placeholder.svg'
+        avatar: mentor.avatar || '/placeholder.svg',
+        connectionStatus
       }
-    }).filter(Boolean) // Remove any null values
-
-    console.log('Transformed mentors data:', JSON.stringify(transformedMentors, null, 2))
+    }).filter(Boolean)
 
     return new NextResponse(JSON.stringify({ mentors: transformedMentors }), {
       status: 200,
