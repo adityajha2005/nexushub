@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
+import { USER_ROLES } from "@/models/User"
 
 export async function GET() {
   try {
@@ -40,26 +41,36 @@ export async function PUT(request: Request) {
     const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
     const data = await request.json()
 
-    await connectDB()
-
-    // First, find the user
-    const user = await User.findById(decoded.id)
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 })
+    if (data.role) {
+      data.role = data.role.toLowerCase()
+      if (!Object.values(USER_ROLES).includes(data.role)) {
+        return NextResponse.json({ 
+          message: `Invalid role. Must be one of: ${Object.values(USER_ROLES).join(', ')}` 
+        }, { status: 400 })
+      }
     }
 
-    // Update user fields
-    user.username = data.username
-    user.bio = data.bio
-    user.skills = data.skills.split(',').map((skill: string) => skill.trim())
+    await connectDB()
 
-    // Save the updated user
-    await user.save()
+    const updateData = {
+      username: data.username || '',
+      bio: data.bio || '',
+      title: data.title || '',
+      role: data.role || USER_ROLES.USER,
+      skills: Array.isArray(data.skills) ? data.skills : []
+    }
 
-    // Fetch the fresh user data
-    const updatedUser = await User.findById(decoded.id).select("-password")
+    console.log('Updating user with data:', updateData)
 
-    console.log('Updated user:', updatedUser) // Debug log
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select("-password")
+
+    if (!updatedUser) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 })
+    }
 
     const response = NextResponse.json({ user: updatedUser })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')

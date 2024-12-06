@@ -1,66 +1,89 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const notificationSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    enum: ['connection_request', 'connection_accepted', 'session_scheduled', 'session_cancelled'],
-    required: true
-  },
-  from: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  message: String,
-  read: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+const notificationTypes = [
+  'message',
+  'connection',
+  'session_request',
+  'session_confirmed',
+  'session_reminder',
+  'session_cancelled',
+  'session_completed'
+] as const;
+
+const userRoles = ['user', 'mentor', 'mentee', 'admin'] as const;
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
+  name: String,
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  bio: String,
+  title: String,
   role: {
     type: String,
-    enum: ['mentor', 'mentee', 'admin'],
-    required: true
+    enum: userRoles,
+    default: 'user'
   },
-  username: String,
-  bio: String,
   skills: [String],
-  expertise: [String],
-  experience: Number,
-  rating: Number,
   avatar: String,
-  notifications: [notificationSchema],
   connections: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  pendingConnections: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+  sessionsCompleted: {
+    type: Number,
+    default: 0
+  },
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5,
+    default: 0
+  },
+  notifications: [{
+    type: {
+      type: String,
+      enum: notificationTypes,
+      required: true
+    },
+    from: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    read: {
+      type: Boolean,
+      default: false
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    message: String,
+    data: mongoose.Schema.Types.Mixed
   }]
 }, {
   timestamps: true
 });
+
+// Add indexes
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+userSchema.index({ role: 1 });
+
+export type UserRole = typeof userRoles[number];
+export type NotificationType = typeof notificationTypes[number];
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 export default User; 

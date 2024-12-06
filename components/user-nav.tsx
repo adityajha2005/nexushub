@@ -28,19 +28,24 @@ export function UserNav({ user }: { user: User }) {
 
   const handleLogout = async () => {
     try {
-      // Clear the token cookie
       document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
-      
-      // Force reload to clear all state
       window.location.href = '/login'
     } catch (error) {
       console.error('Logout error:', error)
     }
   }
 
+  // Format username display - remove @ if it exists at the start
+  const formatUsername = (username?: string) => {
+    if (!username) return ''
+    return username.startsWith('@') ? username : `@${username}`
+  }
+
   // Safely get display text
-  const displayName = user.name || user.username || user.email
-  const initial = displayName ? displayName[0].toUpperCase() : 'U'
+  const displayName = user.name || formatUsername(user.username) || user.email
+  const initial = user.name ? user.name[0].toUpperCase() : 
+                 user.username ? user.username.replace('@', '')[0].toUpperCase() : 
+                 'U'
 
   return (
     <DropdownMenu>

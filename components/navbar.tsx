@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { UserNav } from "@/components/user-nav"
 import { NotificationsMenu } from "@/components/notifications"
+import { Menu, X } from "lucide-react"
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface User {
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const checkAuth = async () => {
     try {
@@ -44,6 +46,12 @@ export function Navbar() {
 
       const data = await response.json()
       console.log('👤 Auth check successful:', data.user ? 'Yes' : 'No')
+      
+      // Clean up the username by removing extra @ symbols if present
+      if (data.user && data.user.username) {
+        data.user.username = data.user.username.replace(/^@+/, '@')
+      }
+      
       setUser(data.user)
     } catch (error) {
       console.error('🔴 Auth check error:', error)
@@ -60,33 +68,49 @@ export function Navbar() {
   return (
     <div className="h-[64px] fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-full items-center">
-        <div className="mr-4 flex">
+        <div className="mr-4 flex items-center justify-between flex-1 md:flex-none">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="font-bold">NEXUSHUB</span>
           </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <nav className="flex items-center space-x-6">
+        
+        <div className={`${
+          isMenuOpen 
+            ? 'absolute top-[64px] left-0 right-0 border-b bg-background p-4 md:p-0 md:border-none' 
+            : 'hidden'
+          } md:flex flex-1 flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 space-x-0 md:space-x-2 md:justify-end`}>
+          <nav className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 space-x-0 md:space-x-6 w-full md:w-auto">
             <Link
               href="/discover"
-              className="transition-colors hover:text-foreground/80"
+              className="transition-colors hover:text-foreground/80 w-full md:w-auto"
+              onClick={() => setIsMenuOpen(false)}
             >
               Discover
             </Link>
             <Link
               href="/find-a-mentor"
-              className="transition-colors hover:text-foreground/80"
+              className="transition-colors hover:text-foreground/80 w-full md:w-auto"
+              onClick={() => setIsMenuOpen(false)}
             >
               Find a Mentor
             </Link>
             <Link
               href="/book-a-session"
-              className="transition-colors hover:text-foreground/80"
+              className="transition-colors hover:text-foreground/80 w-full md:w-auto"
+              onClick={() => setIsMenuOpen(false)}
             >
               Book a Session
             </Link>
           </nav>
-          <div className="ml-auto flex items-center space-x-4">
+          <div className="flex items-center space-x-4 w-full md:w-auto">
             {loading ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
             ) : user ? (
@@ -95,8 +119,8 @@ export function Navbar() {
                 <UserNav user={user} />
               </>
             ) : (
-              <Link href="/login">
-                <Button variant="ghost">Login</Button>
+              <Link href="/login" className="w-full md:w-auto" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="ghost" className="w-full md:w-auto">Login</Button>
               </Link>
             )}
           </div>

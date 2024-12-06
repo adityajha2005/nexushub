@@ -2,182 +2,205 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-
-import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { motion } from "framer-motion"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { useToast } from "@/components/ui/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Checkbox } from "@/components/ui/checkbox"
+import { AtSign, Code2, Save, X } from "lucide-react"
+import { skillCategories } from "@/lib/data/skills"
+import { USER_ROLES, UserRole } from "@/models/User"
 
-const profileFormSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  bio: z.string().max(160, {
-    message: "Bio must not be longer than 160 characters.",
-  }),
-  skills: z.string().max(100, {
-    message: "Skills must not be longer than 100 characters.",
-  }),
-})
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>
+interface ProfileFormData {
+  username: string
+  bio: string
+  skills: string[]
+  title?: string
+  role: UserRole
+}
 
 export default function ProfileSetupPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      username: "",
-      bio: "",
-      skills: "",
-    },
+  const [formData, setFormData] = useState<ProfileFormData>({
+    username: "",
+    bio: "",
+    skills: [],
+    title: "",
+    role: USER_ROLES.USER
   })
+  const [loading, setLoading] = useState(false)
+  const [initialData, setInitialData] = useState<ProfileFormData | null>(null)
+  const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
-    const fetchCurrentProfile = async () => {
+    const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/profile', {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        })
+        const response = await fetch('/api/profile')
         const data = await response.json()
-
         if (response.ok && data.user) {
-          form.reset({
+          const skills = data.user.skills || []
+          
+          const formattedData = {
             username: data.user.username || "",
             bio: data.user.bio || "",
-            skills: data.user.skills?.join(', ') || "",
-          })
+            skills: skills,
+            title: data.user.title || "",
+            role: data.user.role || USER_ROLES.USER
+          }
+
+          setFormData(formattedData)
+          setInitialData(formattedData)
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        })
       }
     }
+    fetchProfile()
+  }, [])
 
-    fetchCurrentProfile()
-  }, [form])
+  const handleSkillToggle = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.includes(skill)
+        ? prev.skills.filter(s => s !== skill)
+        : [...prev.skills, skill]
+    }))
+  }
 
-  async function onSubmit(data: ProfileFormValues) {
-    setIsLoading(true)
+  const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData)
 
+  const handleSubmit = async () => {
+    setLoading(true)
     try {
-      console.log('Submitting profile data:', data)
-
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({
-          username: data.username.trim(),
-          bio: data.bio.trim(),
-          skills: data.skills.trim()
-        }),
-      })
-
-      const responseData = await response.json()
-
-      if (!response?.ok) {
-        console.error('Profile update failed:', responseData)
-        throw new Error(responseData.message || "Failed to update profile")
+      const dataToSend = {
+        ...formData,
+        skills: Array.isArray(formData.skills) ? formData.skills : []
       }
 
-      console.log('Profile update successful:', responseData)
-      
-      toast({
-        description: "Your profile has been updated.",
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
       })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update profile')
+      }
 
-      window.location.href = '/profile'
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      })
+      router.push('/profile')
     } catch (error) {
       console.error('Profile update error:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder="nexususer" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bio"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Tell us a little bit about yourself"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                You can <span>@mention</span> other users and organizations.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="skills"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Skills</FormLabel>
-              <FormControl>
-                <Input placeholder="React, Node.js, Python..." {...field} />
-              </FormControl>
-              <FormDescription>
-                List your key skills, separated by commas.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update profile"}
-        </Button>
-      </form>
-    </Form>
+    <div className="container max-w-2xl mx-auto px-4 py-8">
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <AtSign className="h-4 w-4 text-muted-foreground" />
+              Username
+            </label>
+            <Input
+              placeholder="Your username"
+              value={formData.username}
+              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Title</label>
+            <Input
+              placeholder="e.g. Senior Software Engineer"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Bio</label>
+            <Textarea
+              placeholder="Tell others about yourself..."
+              value={formData.bio}
+              onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+              className="min-h-[100px]"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Code2 className="h-4 w-4 text-muted-foreground" />
+              Skills
+            </label>
+            <ScrollArea className="h-[280px] pr-4">
+              {Object.entries(skillCategories).map(([key, category]) => (
+                <div key={key} className="mb-6 last:mb-0">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                    {category.label}
+                  </h4>
+                  <div className="space-y-2">
+                    {category.skills.map(skill => (
+                      <div key={skill} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={skill}
+                          checked={formData.skills.includes(skill)}
+                          onCheckedChange={() => handleSkillToggle(skill)}
+                        />
+                        <label
+                          htmlFor={skill}
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {skill}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </ScrollArea>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/profile')}
+              disabled={loading}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !hasChanges}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {loading ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

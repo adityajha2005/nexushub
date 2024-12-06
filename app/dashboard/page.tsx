@@ -10,6 +10,17 @@ import { Icons } from "@/components/icons"
 import { motion } from "framer-motion"
 import { toast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface Session {
   _id: string
@@ -67,6 +78,15 @@ export default function DashboardPage() {
   }
 
   const handleCancelSession = async (sessionId: string) => {
+    // Optimistically update UI
+    setSessions(prevSessions => 
+      prevSessions.map(session => 
+        session._id === sessionId 
+          ? { ...session, status: 'cancelled' }
+          : session
+      )
+    )
+
     try {
       const response = await fetch(`/api/sessions/${sessionId}`, {
         method: 'DELETE',
@@ -77,17 +97,17 @@ export default function DashboardPage() {
       })
 
       if (!response.ok) {
+        // Revert on error
+        setSessions(prevSessions => 
+          prevSessions.map(session => 
+            session._id === sessionId 
+              ? { ...session, status: 'scheduled' }
+              : session
+          )
+        )
         const data = await response.json()
         throw new Error(data.message || 'Failed to cancel session')
       }
-
-      setSessions(prevSessions => 
-        prevSessions.map(session => 
-          session.id === sessionId 
-            ? { ...session, status: 'cancelled' }
-            : session
-        )
-      )
 
       toast({
         title: "Success",
@@ -112,11 +132,31 @@ export default function DashboardPage() {
     )
   }
 
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="animate-pulse">
+          <CardHeader>
+            <div className="h-6 w-3/4 bg-muted rounded"></div>
+            <div className="h-4 w-1/2 bg-muted rounded mt-2"></div>
+          </CardHeader>
+          <CardContent className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-muted"></div>
+            <div>
+              <div className="h-4 w-24 bg-muted rounded"></div>
+              <div className="h-3 w-16 bg-muted rounded mt-2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
-        <p>Loading sessions...</p>
+        <LoadingSkeleton />
       </div>
     )
   }
@@ -128,7 +168,15 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold">Your Sessions</h2>
         {sessions.length === 0 ? (
-          <p className="text-muted-foreground">No sessions booked yet.</p>
+          <EmptyState 
+            title="No sessions yet"
+            description="Book a session with a mentor to get started"
+            action={
+              <Button onClick={() => router.push('/find-a-mentor')}>
+                Find a Mentor
+              </Button>
+            }
+          />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {sessions.map((session) => (
@@ -170,15 +218,34 @@ export default function DashboardPage() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() => handleCancelSession(session._id)}
-                      disabled={session.status === 'cancelled'}
-                    >
-                      <Icons.trash className="h-4 w-4 mr-2" />
-                      Cancel Session
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive"
+                          className="w-full"
+                          disabled={session.status !== 'scheduled'}
+                        >
+                          Cancel Session
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. The session will be cancelled and both parties will be notified.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleCancelSession(session._id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Yes, cancel session
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </CardFooter>
                 </Card>
               </motion.div>

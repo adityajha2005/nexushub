@@ -1,53 +1,88 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
+import jwt from "jsonwebtoken"
+import { cookies } from "next/headers"
 
 export async function GET(request: Request) {
   try {
+    const cookieStore = cookies()
+    const token = cookieStore.get("token")
+    let userId = null
+
+    if (token) {
+      const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
+      userId = decoded.id
+    }
+
     const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role')
-    const skills = searchParams.get('skills')
     const search = searchParams.get('search')
+    const role = searchParams.get('role')
+    const skills = searchParams.get('skills')?.split(',')
 
     await connectDB()
 
     let query: any = {}
 
-    if (role) {
+    // Add role filter
+    if (role && role !== 'all') {
       query.role = role
     }
 
-    if (skills) {
-      query.skills = { $in: skills.split(',') }
-    }
-
+    // Add search filter
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { username: { $regex: search, $options: 'i' } },
-        { bio: { $regex: search, $options: 'i' } }
+        { skills: { $in: [new RegExp(search, 'i')] } }
       ]
     }
 
-    const users = await User.find(query)
-      .select('name username bio skills avatar role')
-      .limit(50)
+    // Add skills filter
+    if (skills && skills.length > 0) {
+      query.skills = { $in: skills }
+    }
 
-    return NextResponse.json({
-      users: users.map(user => ({
-        id: user._id.toString(),
-        name: user.name,
-        username: user.username,
-        bio: user.bio,
-        skills: user.skills || [],
-        avatar: user.avatar,
-        role: user.role
-      }))
-    })
+    const users = await User.find(query)
+      .select('_id name role skills bio avatar title connections pendingConnections')
+      .lean()
+
+    // Transform the data before sending
+    const transformedUsers = users.map(user => {
+      if (!user || typeof user !== 'object') {
+        console.error('Invalid user object:', user)
+        return null
+      }
+
+      let connectionStatus = 'none'
+      if (userId) {
+        if (user.connections?.includes(userId)) {
+          connectionStatus = 'connected'
+        } else if (user.pendingConnections?.includes(userId)) {
+          connectionStatus = 'pending'
+        }
+      }
+
+      return {
+        _id: user._id.toString(),
+        name: user.name || '',
+        role: user.role || '',
+        skills: Array.isArray(user.skills) ? user.skills : [],
+        bio: user.bio || '',
+        avatar: user.avatar || '/placeholder.svg',
+        title: user.title || '',
+        connectionStatus
+      }
+    }).filter(Boolean)
+
+    return NextResponse.json({ users: transformedUsers })
   } catch (error) {
-    console.error('Users fetch error:', error)
+    console.error('Error in /api/users:', error)
     return NextResponse.json(
-      { message: "Failed to fetch users" },
+      { 
+        message: "Failed to fetch users",
+        users: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
