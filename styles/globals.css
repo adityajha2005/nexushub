@@ -58,20 +58,40 @@
   }
 }
 
-/* Animation classes */
-.animate-slide-up {
-  animation: slideUp 1s ease-out forwards;
+html {
+  scroll-behavior: smooth;
 }
 
-.animate-fade-in {
-  animation: fadeIn 1s ease-out forwards;
+@layer utilities {
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out;
+  }
+
+  .animate-rotate {
+    animation: rotate 10s linear infinite;
+  }
+
+  .animate-count-up {
+    animation: countUp 2s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-down {
+    animation: fadeInDown 0.6s ease-out forwards;
+  }
 }
 
-.animate-scale-in {
-  animation: scaleIn 0.5s ease-out forwards;
-}
-
-/* Animation keyframes */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -150,3 +170,4 @@
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
 }
+
