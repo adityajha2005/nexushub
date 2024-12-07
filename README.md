@@ -43,7 +43,7 @@ NEXUSHUB is designed to facilitate connections between IT professionals and aspi
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/nexushub.git
+git clone (https://github.com/adityajha2005/nexushub)
 cd nexushub
 
 # Install dependencies
