@@ -26,51 +26,22 @@ export async function POST(request: Request) {
       )
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
     // Create user
+    const hashedPassword = await bcrypt.hash(password, 10)
     const user = await User.create({
       email,
       password: hashedPassword,
-      name,
-      role: 'USER'
+      name
     })
 
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    )
+    if (!user) {
+      throw new Error("Failed to create user")
+    }
 
-    // Create response
-    const response = NextResponse.json(
-      { 
-        success: true,
-        message: "Account created successfully",
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        }
-      },
-      { status: 201 }
-    )
-
-    // Set cookie
-    response.cookies.set({
-      name: 'token',
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 // 7 days
-    })
-
-    return response
+    return NextResponse.json({ 
+      success: true,
+      message: "Account created successfully"
+    }, { status: 201 })
 
   } catch (error) {
     console.error('Signup error:', error)

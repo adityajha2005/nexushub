@@ -40,36 +40,29 @@ export function UserAuthForm({ className, type = "login", ...props }: UserAuthFo
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: 'include',
         body: JSON.stringify(values),
       })
 
       const data = await response.json()
 
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Authentication failed")
+      if (!data.success) {
+        throw new Error(data.message)
       }
 
-      // Show success message
-      toast({
-        title: type === "login" ? "Login Successful" : "Account Created",
-        description: data.message,
-      })
-
-      // Redirect after a short delay
-      setTimeout(() => {
-        if (type === "signup") {
-          window.location.href = '/profile-setup'
-        } else {
-          window.location.href = '/profile'
-        }
-      }, 1000)
+      if (type === "signup") {
+        toast({
+          title: "Success",
+          description: "Account created successfully. Please log in.",
+        })
+        router.push('/login')
+      } else {
+        router.push('/profile')
+      }
 
     } catch (error) {
-      console.error('Auth error:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Authentication failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       })
     } finally {
