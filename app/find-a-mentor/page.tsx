@@ -21,6 +21,52 @@ type Mentor = {
   isConnecting?: boolean
 }
 
+const containerVariants = {
+  hidden: { opacity:0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100
+    }
+  }
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  show: { 
+    opacity: 1, 
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100
+    }
+  },
+  hover: { 
+    scale: 1.03,
+    boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 15
+    }
+  },
+  tap: { 
+    scale: 0.98 
+  }
+}
+
 export default function FindAMentor() {
   const [searchQuery, setSearchQuery] = useState("")
   const [mentors, setMentors] = useState<Mentor[]>([])
@@ -148,12 +194,13 @@ export default function FindAMentor() {
   }
 
   return (
-    <div className="container py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+    <motion.div 
+     className="container py-8"
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
+    >
+      <motion.div variants={itemVariants}>
         <h1 className="text-3xl font-bold mb-8">Find a Mentor</h1>
         <Input
           type="search"
@@ -164,24 +211,31 @@ export default function FindAMentor() {
         />
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        variants={containerVariants}
+      >
         <AnimatePresence mode="popLayout">
-          {filteredMentors.map((mentor, index) => (
+          {filteredMentors.map((mentor) => (
             <motion.div
               key={mentor._id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="transform transition-all"
+              variants={cardVariants}
+              whileHover="hover"
+              whileTap="tap"
+              layout
+              layoutId={mentor._id}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow duration-300">
+              <Card className="h-full">
                 <CardHeader className="flex flex-row items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={mentor.avatar} alt={mentor.name} />
-                    <AvatarFallback>{mentor.name[0]}</AvatarFallback>
-                  </Avatar>
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={mentor.avatar} alt={mentor.name} />
+                      <AvatarFallback>{mentor.name[0]}</AvatarFallback>
+                    </Avatar>
+                  </motion.div>
                   <div>
                     <CardTitle>{mentor.name}</CardTitle>
                     <CardDescription>
@@ -196,53 +250,75 @@ export default function FindAMentor() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                   >
-                    {mentor.expertise.map((skill) => (
-                      <Badge 
-                        key={skill} 
-                        variant="secondary"
-                        className="transition-all hover:scale-105"
+                    {mentor.expertise.map((skill, index) => (
+                      <motion.div
+                        key={skill}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
                       >
-                        {skill}
-                      </Badge>
+                        <Badge 
+                          variant="secondary"
+                          className="transition-all hover:scale-105"
+                        >
+                          {skill}
+                        </Badge>
+                      </motion.div>
                     ))}
                   </motion.div>
-                  <Badge 
-                    variant="outline" 
-                    className="bg-green-50 text-green-700 transition-colors duration-300"
-                  >
-                    Available
-                  </Badge>
+                  <motion.div whileHover={{ scale: 1.05 }}>
+                    <Badge 
+                      variant="outline" 
+                      className="bg-green-50 text-green-700"
+                    >
+                      Available
+                    </Badge>
+                  </motion.div>
                 </CardContent>
                 <CardFooter className="flex gap-2">
-                  <Button 
-                    className="flex-1 transition-transform duration-200 hover:scale-105"
-                    onClick={() => handleScheduleSession(mentor._id)}
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Schedule Session
-                  </Button>
-                  <Button 
-                    className="flex-1 transition-all duration-200 hover:scale-105"
-                    variant="outline"
-                    onClick={() => handleConnect(mentor._id)}
-                    disabled={mentor.connectionStatus !== 'none' || mentor.isConnecting}
-                  >
-                    <motion.span
-                      initial={false}
-                      animate={{ scale: mentor.connectionStatus === 'pending' ? [1, 1.1, 1] : 1 }}
-                      transition={{ duration: 0.3 }}
+                    <Button 
+                      className="w-full"
+                      onClick={() => handleScheduleSession(mentor._id)}
                     >
-                      {mentor.isConnecting ? 'Connecting...' :
-                       mentor.connectionStatus === 'connected' ? 'Connected' :
-                       mentor.connectionStatus === 'pending' ? 'Request Sent' :
-                       'Connect'}
-                    </motion.span>
-                  </Button>
+                      Schedule Session
+                    </Button>
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleConnect(mentor._id)}
+                      disabled={mentor.connectionStatus !== 'none' || mentor.isConnecting}
+                    >
+                      <motion.span
+                        initial={false}
+                        animate={{ 
+                          scale: mentor.connectionStatus === 'pending' ? [1, 1.1, 1] : 1,
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {mentor.isConnecting ? 'Connecting...' :
+                         mentor.connectionStatus === 'connected' ? 'Connected' :
+                         mentor.connectionStatus === 'pending' ? 'Request Sent' :
+                         'Connect'}
+                      </motion.span>
+                    </Button>
+                  </motion.div>
                 </CardFooter>
               </Card>
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 } 
