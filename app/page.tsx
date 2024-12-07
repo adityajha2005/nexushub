@@ -4,9 +4,10 @@ import { useRef, useEffect, useState } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Navbar } from "@/components/navbar"
-import { ReviewAvatars } from "@/components/review-avatars"
+import { ReviewAvatars } from "./components/review-avatars"
 import { StatsCard } from "@/components/stats-card"
 import { ArrowRight, ArrowDown, Users, BookOpen, Award } from 'lucide-react'
+import { motion } from "framer-motion"
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false)
@@ -55,8 +56,8 @@ export default function Home() {
       window.requestAnimationFrame(step);
     };
 
-    const totalSessionsElement = document.querySelector('[data-target="5000"]');
-    const totalHoursElement = document.querySelector('[data-target="20000"]');
+    const totalSessionsElement = document.querySelector('[data-target="5000"]')as HTMLElement;
+    const totalHoursElement = document.querySelector('[data-target="20000"]')as HTMLElement;
 
     if (totalSessionsElement && totalHoursElement) {
       animateValue(totalSessionsElement, 0, 5000, 2000);
@@ -83,33 +84,112 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20"
+    >
       <Navbar />
       <main className="container mx-auto px-4 pt-24">
         {/* Hero Section */}
-        <section className="grid lg:grid-cols-2 gap-12 items-center py-12">
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="grid lg:grid-cols-2 gap-12 items-center py-12"
+        >
           <div className="space-y-8">
-            <Badge className={`transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>BOOST YOUR CAREER</Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight animate-slide-up">
-              /YOUR
-              <br />
-              PERSONAL
-              <br />
-              IT MENTORING
-              <br />
-              IS HERE
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Badge className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                BOOST YOUR CAREER
+              </Badge>
+            </motion.div>
+            
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+              {['/YOUR', 'PERSONAL', 'IT MENTORING', 'IS HERE'].map((text, i) => (
+                <motion.div
+                  key={text}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + (i * 0.1) }}
+                >
+                  {text}
+                </motion.div>
+              ))}
             </h1>
-            <p className="text-muted-foreground max-w-lg animate-fade-in">
-              Our platform offers expert IT coaching consultations to help you gain valuable insight and guidance from industry
-              professionals.
-            </p>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-4 sm:py-6 rounded-full text-base sm:text-lg group animate-scale-in">
-              Let's Connect
-              <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
+
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="text-muted-foreground max-w-lg"
+            >
+              Our platform offers expert IT coaching consultations to help you gain valuable insight and guidance from industry professionals.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1 }}
+              className="relative"
+            >
+              <Button 
+                className="group bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-full text-lg relative overflow-hidden"
+              >
+                <motion.div
+                  className="relative z-10 flex items-center gap-2"
+                  initial={false}
+                  animate={{ x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  Let's Connect
+                  <ArrowRight className="inline-block transition-transform duration-300 group-hover:translate-x-1" />
+                </motion.div>
+                
+                {/* Button effects */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 group-hover:scale-110 transition-transform duration-500">
+                  <div className="absolute inset-0 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+                <div className="absolute top-0 -left-[100%] w-[120%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 group-hover:left-[100%] transition-all duration-1000 ease-out" />
+              </Button>
+              
+              {/* Optional floating dots decoration */}
+              <motion.div
+                className="absolute -right-4 -top-4 w-20 h-20 pointer-events-none"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 90, 0]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              >
+                <div className="absolute inset-0 grid grid-cols-2 gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="w-2 h-2 bg-primary/30 rounded-full"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
 
-          <div className="space-y-6 bg-card p-6 sm:p-8 rounded-3xl animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="space-y-6 bg-card/50 backdrop-blur-sm p-8 rounded-3xl border border-white/10 shadow-xl"
+          >
             <h2 className="text-xl font-semibold mb-4">NEXUSHUB IN NUMBERS</h2>
 
             <div className="space-y-4">
@@ -128,15 +208,23 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm font-medium">OVER 280+ REVIEWS</span>
-                  <ReviewAvatars />
+                  <div className="mt-1">
+                    <ReviewAvatars />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        {/* Stats Section */}
-        <section className="mt-24 bg-gradient-to-r from-primary to-secondary rounded-3xl p-6 sm:p-8 lg:p-12 overflow-hidden relative">
+        {/* Stats Section with improved animations */}
+        <motion.section 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="mt-24 relative"
+        >
           <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
             <div className="space-y-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-white">
@@ -160,20 +248,49 @@ export default function Home() {
               </div>
             </div>
             <div className="relative h-64 lg:h-96">
-              <div className="absolute inset-0 bg-white/10 rounded-3xl transform rotate-6 transition-transform hover:rotate-12"></div>
-              <div className="absolute inset-0 bg-white/20 rounded-3xl transform -rotate-6 transition-transform hover:-rotate-12"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-24 h-24 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              {/* Glass cards */}
+              <div className="relative w-full h-full perspective-1000">
+                {/* Main card */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-3xl backdrop-blur-md border border-white/20 shadow-xl transform hover:rotate-2 transition-transform duration-500">
+                  {/* Inner glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-3xl"></div>
+                  
+                  {/* Content */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative group">
+                      {/* Lightning icon with glow */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-lg flex items-center justify-center transform transition-all duration-500 group-hover:scale-110">
+                        <svg 
+                          className="w-12 h-12 text-white transform transition-all duration-500" 
+                          viewBox="0 0 24 24" 
+                          fill="currentColor"
+                        >
+                          <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      
+                      {/* Subtle glow effect */}
+                      <div className="absolute -inset-2 bg-blue-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Background accent card */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-3xl -rotate-3 -z-10 transform transition-transform duration-500"></div>
               </div>
             </div>
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-primary/50 to-secondary/50 backdrop-blur-sm"></div>
-        </section>
+        </motion.section>
 
-        {/* Features Section */}
-        <section ref={featuresRef} className="mt-24 py-12">
+        {/* Features Section with staggered animations */}
+        <motion.section 
+          ref={featuresRef}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-24 py-12"
+        >
           <h2 className="text-3xl font-bold text-center mb-12 opacity-0 transition-opacity duration-1000 ease-out"
             style={{ opacity: isFeaturesSectionVisible ? 1 : 0 }}>
             Why Choose NEXUSHUB?
@@ -195,7 +312,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Scroll Indicator */}
         {/* <div className="flex justify-center py-12">
@@ -204,7 +321,7 @@ export default function Home() {
           </Button>
         </div> */}
       </main>
-    </div>
+    </motion.div>
   )
 }
 
