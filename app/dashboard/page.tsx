@@ -110,6 +110,10 @@ export default function DashboardPage() {
         throw new Error(data.message || 'Failed to cancel session')
       }
 
+      // Trigger notification refresh
+      const event = new CustomEvent('notification-update')
+      window.dispatchEvent(event)
+
       toast({
         title: "Success",
         description: "Session cancelled successfully",
