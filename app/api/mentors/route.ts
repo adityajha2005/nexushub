@@ -4,6 +4,20 @@ import User from "@/models/User"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 
+// Dummy experience data mapping
+const mentorExperience = {
+  "Dr. Emily Chen": 12,
+  "John Smith": 8,
+  "Sarah Johnson": 15,
+  "Michael Brown": 10,
+  "David Wilson": 7,
+  "Lisa Anderson": 9,
+  "James Taylor": 11,
+  "Emma Davis": 6,
+  "Robert Miller": 14,
+  "Jennifer White": 13
+}
+
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
@@ -16,29 +30,12 @@ export async function GET(request: Request) {
     }
 
     await connectDB()
-    console.log('DB connection successful')
     
     const mentors = await User.find({ role: 'mentor' })
-      .select('_id name expertise experience rating avatar pendingConnections connections')
+      .select('_id name expertise rating avatar pendingConnections connections')
       .lean()
 
-    console.log('Raw mentors data:', JSON.stringify(mentors, null, 2))
-
-    if (!Array.isArray(mentors)) {
-      console.error('Mentors is not an array:', mentors)
-      return NextResponse.json({
-        message: "Invalid data format",
-        mentors: []
-      }, { status: 500 })
-    }
-
-    // Transform the data before sending
     const transformedMentors = mentors.map(mentor => {
-      if (!mentor || typeof mentor !== 'object') {
-        console.error('Invalid mentor object:', mentor)
-        return null
-      }
-
       let connectionStatus = 'none'
       if (userId) {
         if (mentor.connections?.includes(userId)) {
@@ -48,34 +45,27 @@ export async function GET(request: Request) {
         }
       }
 
+      // Add dummy experience based on mentor name or default to a random number between 5-15
+      const experience = mentorExperience[mentor.name] || 
+        Math.floor(Math.random() * (15 - 5 + 1)) + 5
+
       return {
-        _id: mentor._id ? mentor._id.toString() : '',
-        name: mentor.name || '',
-        expertise: Array.isArray(mentor.expertise) ? mentor.expertise : [],
-        experience: typeof mentor.experience === 'number' ? mentor.experience : 0,
-        rating: typeof mentor.rating === 'number' ? mentor.rating : 0,
+        _id: mentor._id.toString(),
+        name: mentor.name,
+        expertise: mentor.expertise || [],
+        experience, // Add the experience field
+        rating: mentor.rating || 4.5,
         avatar: mentor.avatar || '/placeholder.svg',
         connectionStatus
       }
-    }).filter(Boolean)
-
-    return new NextResponse(JSON.stringify({ mentors: transformedMentors }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
     })
+
+    return NextResponse.json({ mentors: transformedMentors })
   } catch (error) {
     console.error('Error in /api/mentors:', error)
-    return new NextResponse(JSON.stringify({
+    return NextResponse.json({
       message: "Failed to fetch mentors",
-      mentors: [],
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+      mentors: []
+    }, { status: 500 })
   }
 } 

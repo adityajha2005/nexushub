@@ -14,7 +14,7 @@ type Mentor = {
   _id: string
   name: string
   expertise: string[]
-  experience: number
+  experience?: number
   rating: number
   avatar: string
   connectionStatus: 'none' | 'pending' | 'connected'
@@ -169,7 +169,7 @@ export default function FindAMentor() {
                   <div>
                     <CardTitle>{mentor.name}</CardTitle>
                     <CardDescription>
-                      {mentor.experience} years experience
+                      {mentor.experience ? `${mentor.experience} years experience` : 'Experience not specified'}
                     </CardDescription>
                   </div>
                 </CardHeader>
