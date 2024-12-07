@@ -1,35 +1,17 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next()
   
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/profile', '/profile-setup']
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  // Redirect to login if accessing protected route without token
-  if (isProtectedPath && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Redirect to profile if accessing login/signup with valid token
-  if (token && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/profile', request.url))
-  }
-
-  return NextResponse.next()
+  // Add CORS headers
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  
+  return response
 }
 
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/profile-setup/:path*',
-    '/discover/:path*',
-    '/login',
-    '/signup',
-  ]
+  matcher: '/api/:path*',
 } 
