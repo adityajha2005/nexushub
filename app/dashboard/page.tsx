@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { getAvatarUrl } from "@/lib/utils/avatar"
 
 interface Session {
   _id: string
@@ -209,8 +210,13 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent className="flex items-center gap-4">
                     <Avatar>
-                      <AvatarImage src={session.mentor.avatar} alt={session.mentor.name} />
-                      <AvatarFallback>{session.mentor.name[0]}</AvatarFallback>
+                      <AvatarImage 
+                        src={session.mentor.avatar || getAvatarUrl(session.mentor._id)} 
+                        alt={session.mentor.name} 
+                      />
+                      <AvatarFallback>
+                        {session.mentor.name[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium">{session.mentor.name}</p>

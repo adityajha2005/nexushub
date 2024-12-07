@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
 import Session from "@/models/Session"
+import { getAvatarUrl } from "@/lib/utils/avatar"
 
 export async function GET() {
   try {
@@ -28,8 +29,20 @@ export async function GET() {
     .sort({ date: 1 }) // Sort by date ascending
     .lean()
 
+    const transformedSessions = sessions.map(session => ({
+      ...session,
+      _id: session._id.toString(),
+      mentor: {
+        ...session.mentor,
+        _id: session.mentor._id.toString(),
+        avatar: (session.mentor.avatar && session.mentor.avatar !== '/placeholder.svg') 
+          ? session.mentor.avatar 
+          : getAvatarUrl(session.mentor._id.toString())
+      }
+    }))
+
     return NextResponse.json({
-      sessions: sessions.map(session => ({
+      sessions: transformedSessions.map(session => ({
         id: session._id.toString(),
         _id: session._id.toString(),
         mentor: {
