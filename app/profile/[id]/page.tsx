@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import {
@@ -18,34 +18,75 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
+interface User {
+  _id: string
+  name: string
+  title?: string
+  role: string
+  verified?: boolean
+  avatar?: string
+  bio?: string
+  skills?: string[]
+  linkedin?: string
+  github?: string
+  website?: string
+  sessionsCompleted?: number
+  rating?: number
+  connections?: string[]
+}
+
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'reviews'>('overview')
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`/api/users/${params.id}`)
+        const response = await fetch(`/api/users/${params.id}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response')
+        }
+
         const data = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load profile')
+        }
+        
+        if (!data.user) {
+          throw new Error('User not found')
+        }
+
         setUser(data.user)
       } catch (error) {
+        console.error('Profile fetch error:', error)
         toast({
           title: "Error",
-          description: "Failed to load profile",
+          description: error instanceof Error ? error.message : "Failed to load profile",
           variant: "destructive",
         })
+        router.push('/discover')
       } finally {
         setLoading(false)
       }
     }
     fetchUser()
-  }, [params.id])
+  }, [params.id, toast, router])
 
   if (loading) return <ProfileSkeleton />
 
-  if (!user) return <div>User not found</div>
+  if (!user) return null
 
   return (
     <div className="container py-8 space-y-8">
@@ -238,4 +279,94 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       </AnimatePresence>
     </div>
   )
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="container py-8 space-y-8">
+      {/* Hero Section Skeleton */}
+      <div className="relative rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background p-8 mb-8">
+        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+          {/* Avatar Skeleton */}
+          <div className="h-40 w-40 rounded-full bg-muted animate-pulse" />
+
+          {/* Info Skeleton */}
+          <div className="space-y-4 text-center md:text-left flex-1">
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+              <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+              <div className="flex gap-2 justify-center md:justify-start">
+                <div className="h-5 w-20 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+
+            {/* Stats Skeleton */}
+            <div className="flex gap-6 justify-center md:justify-start">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="text-center">
+                  <div className="h-8 w-16 bg-muted rounded animate-pulse mb-1" />
+                  <div className="h-4 w-14 bg-muted rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons Skeleton */}
+          <div className="flex gap-3">
+            <div className="h-10 w-32 bg-muted rounded animate-pulse" />
+            <div className="h-10 w-32 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Navigation Skeleton */}
+      <div className="border-b">
+        <nav className="flex gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-10 w-24 bg-muted rounded animate-pulse" />
+          ))}
+        </nav>
+      </div>
+
+      {/* Content Skeleton */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="h-6 w-24 bg-muted rounded animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-20 bg-muted rounded animate-pulse" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="h-6 w-36 bg-muted rounded animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-6 w-20 bg-muted rounded animate-pulse" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-6 w-full bg-muted rounded animate-pulse" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 } 
+// </```
+// rewritten_file>
