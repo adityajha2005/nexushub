@@ -18,6 +18,7 @@ type Mentor = {
   rating: number
   avatar: string
   connectionStatus: 'none' | 'pending' | 'connected'
+  isConnecting?: boolean
 }
 
 export default function FindAMentor() {
@@ -87,6 +88,14 @@ export default function FindAMentor() {
 
   const handleConnect = async (mentorId: string) => {
     try {
+      setMentors(prevMentors => 
+        prevMentors.map(mentor => 
+          mentor._id === mentorId 
+            ? { ...mentor, isConnecting: true }
+            : mentor
+        )
+      )
+
       const response = await fetch('/api/connections', {
         method: 'POST',
         headers: {
@@ -99,30 +108,37 @@ export default function FindAMentor() {
       const data = await response.json()
 
       if (!response.ok) {
+        setMentors(prevMentors => 
+          prevMentors.map(mentor => 
+            mentor._id === mentorId 
+              ? { ...mentor, isConnecting: false }
+              : mentor
+          )
+        )
         throw new Error(data.message || 'Failed to send connection request')
       }
 
       setMentors(prevMentors => 
         prevMentors.map(mentor => 
           mentor._id === mentorId 
-            ? { ...mentor, connectionStatus: 'pending' }
+            ? { ...mentor, connectionStatus: 'pending', isConnecting: false }
             : mentor
         )
       )
 
       toast({
         title: "Connection Request Sent",
-        description: "You can view the status in your notifications",
+        description: "The mentor will be notified of your request",
         duration: 5000,
-        className: "slide-in-from-right",
       })
     } catch (error) {
       console.error('Connection error:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send connection request",
+        description: error instanceof Error 
+          ? error.message 
+          : "Failed to send connection request. Please try again.",
         variant: "destructive",
-        className: "shake-animation",
       })
     }
   }
@@ -208,14 +224,15 @@ export default function FindAMentor() {
                     className="flex-1 transition-all duration-200 hover:scale-105"
                     variant="outline"
                     onClick={() => handleConnect(mentor._id)}
-                    disabled={mentor.connectionStatus !== 'none'}
+                    disabled={mentor.connectionStatus !== 'none' || mentor.isConnecting}
                   >
                     <motion.span
                       initial={false}
                       animate={{ scale: mentor.connectionStatus === 'pending' ? [1, 1.1, 1] : 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {mentor.connectionStatus === 'connected' ? 'Connected' :
+                      {mentor.isConnecting ? 'Connecting...' :
+                       mentor.connectionStatus === 'connected' ? 'Connected' :
                        mentor.connectionStatus === 'pending' ? 'Request Sent' :
                        'Connect'}
                     </motion.span>
