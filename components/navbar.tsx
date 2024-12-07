@@ -25,10 +25,6 @@ export function Navbar() {
 
   const checkAuth = async () => {
     try {
-      console.log('🔵 Navbar auth check started')
-      const hasCookie = document.cookie.includes('token')
-      console.log('🍪 Token cookie present:', hasCookie)
-      
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
@@ -39,30 +35,39 @@ export function Navbar() {
       })
 
       if (!response.ok) {
-        console.log('❌ Auth check failed with status:', response.status)
         setUser(null)
         return
       }
 
       const data = await response.json()
-      console.log('👤 Auth check successful:', data.user ? 'Yes' : 'No')
       
-      // Clean up the username by removing extra @ symbols if present
-      if (data.user && data.user.username) {
-        data.user.username = data.user.username.replace(/^@+/, '@')
+      if (data.user) {
+        // Clean up the username by removing extra @ symbols if present
+        if (data.user.username) {
+          data.user.username = data.user.username.replace(/^@+/, '@')
+        }
+        setUser(data.user)
+      } else {
+        setUser(null)
       }
-      
-      setUser(data.user)
     } catch (error) {
-      console.error('🔴 Auth check error:', error)
+      console.error('Auth check error:', error)
       setUser(null)
     } finally {
       setLoading(false)
     }
   }
 
+  // Add event listener for auth changes
   useEffect(() => {
     checkAuth()
+
+    // Listen for auth changes
+    window.addEventListener('auth-change', checkAuth)
+    
+    return () => {
+      window.removeEventListener('auth-change', checkAuth)
+    }
   }, [])
 
   return (
