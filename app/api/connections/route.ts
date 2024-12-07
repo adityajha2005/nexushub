@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import User from "@/models/User"
+import Notification from "@/models/Notification"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 
@@ -38,6 +39,22 @@ export async function POST(request: Request) {
     if (mentor.pendingConnections?.includes(userId)) {
       return NextResponse.json({ message: "Connection request already sent" }, { status: 400 })
     }
+
+    // Get user details for notification
+    const user = await User.findById(userId).select('name')
+
+    // Create notification for the mentor
+    await Notification.create({
+      recipient: mentorId,
+      sender: userId,
+      type: 'CONNECTION_REQUEST',
+      message: `${user.name} sent you a connection request`,
+      read: false,
+      data: {
+        userId: userId,
+        type: 'connection_request'
+      }
+    })
 
     // Add to pending connections
     await User.findByIdAndUpdate(mentorId, {

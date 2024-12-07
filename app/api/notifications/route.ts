@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import jwt from "jsonwebtoken"
 import { connectDB } from "@/lib/db"
-import User from "@/models/User"
+import Notification from "@/models/Notification"
+import jwt from "jsonwebtoken"
+import { cookies } from "next/headers"
 
 export async function GET(request: Request) {
   try {
@@ -10,63 +10,56 @@ export async function GET(request: Request) {
     const token = cookieStore.get("token")
 
     if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
     }
 
     const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
+    const userId = decoded.id
+
     await connectDB()
 
-    const user = await User.findById(decoded.id)
-      .populate('notifications.from', 'name avatar')
+    const notifications = await Notification.find({ recipient: userId })
+      .sort({ createdAt: -1 })
+      .populate('sender', 'name avatar')
+      .lean()
 
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ notifications: user.notifications })
+    return NextResponse.json({ notifications })
   } catch (error) {
-    console.error("Notifications fetch error:", error)
-    return NextResponse.json(
-      { message: "Failed to fetch notifications" },
-      { status: 500 }
-    )
+    console.error('Error fetching notifications:', error)
+    return NextResponse.json({ 
+      message: "Failed to fetch notifications",
+      notifications: []
+    }, { status: 500 })
   }
 }
 
-// Mark notifications as read
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
   try {
     const cookieStore = cookies()
     const token = cookieStore.get("token")
 
     if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
     const { notificationIds } = await request.json()
+    
+    if (!notificationIds || !Array.isArray(notificationIds)) {
+      return NextResponse.json({ message: "Invalid notification IDs" }, { status: 400 })
+    }
 
     await connectDB()
 
-    await User.updateOne(
-      { _id: decoded.id },
-      { 
-        $set: { 
-          "notifications.$[elem].read": true 
-        } 
-      },
-      { 
-        arrayFilters: [{ "elem._id": { $in: notificationIds } }],
-        multi: true
-      }
+    await Notification.updateMany(
+      { _id: { $in: notificationIds } },
+      { $set: { read: true } }
     )
 
     return NextResponse.json({ message: "Notifications marked as read" })
   } catch (error) {
-    console.error("Mark notifications error:", error)
-    return NextResponse.json(
-      { message: "Failed to mark notifications as read" },
-      { status: 500 }
-    )
+    console.error('Error updating notifications:', error)
+    return NextResponse.json({ 
+      message: "Failed to update notifications" 
+    }, { status: 500 })
   }
 } 
