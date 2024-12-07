@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db"
 import User from "@/models/User"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
+import { getAvatarUrl } from "@/lib/utils/avatar"
 
 export async function GET(request: Request) {
   try {
@@ -68,7 +69,9 @@ export async function GET(request: Request) {
         role: user.role || '',
         skills: Array.isArray(user.skills) ? user.skills : [],
         bio: user.bio || '',
-        avatar: user.avatar || '/placeholder.svg',
+        avatar: (user.avatar && user.avatar !== '/placeholder.svg') 
+          ? user.avatar 
+          : getAvatarUrl(user._id.toString()),
         title: user.title || '',
         connectionStatus
       }

@@ -21,6 +21,7 @@ import { ChevronDown, X } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface User {
   id: string
@@ -33,6 +34,27 @@ interface User {
 }
 
 const commonSkills = getAllSkills()
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  show: { 
+    opacity: 1, 
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100
+    }
+  },
+  hover: { 
+    scale: 1.03,
+    boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 15
+    }
+  }
+}
 
 export default function DiscoverPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -96,12 +118,11 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="container py-8 space-y-8">
-      <motion.div
+    <div className="container py-8">
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-4"
+        className="space-y-8"
       >
         <h1 className="text-3xl font-bold">Discover</h1>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -137,73 +158,91 @@ export default function DiscoverPage() {
             }}
           />
         </div>
-      </motion.div>
 
-      {loading ? (
-        <LoadingSkeleton />
-      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence mode="popLayout">
             {users.map((user, index) => (
               <motion.div
                 key={user._id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                variants={cardVariants}
+                initial="hidden"
+                animate="show"
+                whileHover="hover"
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+                transition={{ delay: index * 0.1 }}
               >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <CardHeader className="relative">
-                    <div className="absolute top-4 right-4">
-                      <Badge variant={user.role === 'mentor' ? 'default' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{user.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle>{user.name}</CardTitle>
-                        <CardDescription>{user.title || 'Member'}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {user.skills?.slice(0, 4).map((skill) => (
-                        <Badge key={skill} variant="outline">
-                          {skill}
+                <Link href={`/profile/${user._id}`}>
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardHeader className="relative">
+                      <div className="absolute top-4 right-4">
+                        <Badge variant={user.role === 'mentor' ? 'default' : 'secondary'}>
+                          {user.role}
                         </Badge>
-                      ))}
-                      {user.skills?.length > 4 && (
-                        <Badge variant="outline">+{user.skills.length - 4}</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {user.bio || 'No bio available'}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push(`/profile/${user._id}`)}
-                    >
-                      View Profile
-                    </Button>
-                    {user.role === 'mentor' && (
-                      <Button onClick={() => handleConnect(user._id)}>
-                        Connect
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        >
+                          <Avatar className="h-12 w-12 ring-2 ring-background">
+                            <AvatarImage 
+                              src={user.avatar} 
+                              alt={user.name}
+                              className="object-cover"
+                              onError={(e) => {
+                                console.log('Avatar failed to load:', user.avatar);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {user.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                        </motion.div>
+                        <div>
+                          <CardTitle>{user.name}</CardTitle>
+                          <CardDescription>{user.title || 'Member'}</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <motion.div 
+                        className="flex flex-wrap gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        {user.skills?.map((skill, index) => (
+                          <motion.div
+                            key={skill}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <Badge 
+                              variant="secondary"
+                              className="transition-all hover:scale-105"
+                            >
+                              {skill}
+                            </Badge>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                      <motion.div 
+                        className="mt-4 text-sm text-muted-foreground"
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        View Profile →
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
-      )}
+      </motion.div>
     </div>
   )
 }

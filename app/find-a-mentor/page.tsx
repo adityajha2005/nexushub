@@ -232,8 +232,17 @@ export default function FindAMentor() {
                     transition={{ type: "spring", stiffness: 300 }}
                   >
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={mentor.avatar} alt={mentor.name} />
-                      <AvatarFallback>{mentor.name[0]}</AvatarFallback>
+                      <AvatarImage 
+                        src={mentor.avatar} 
+                        alt={mentor.name}
+                        onError={(e) => {
+                          // Fallback to initials if image fails to load
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                      <AvatarFallback className="bg-primary/10">
+                        {mentor.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
                     </Avatar>
                   </motion.div>
                   <div>

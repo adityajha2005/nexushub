@@ -95,20 +95,26 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   return (
     <div className="container py-8 space-y-8">
       {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background p-8 mb-8"
-      >
+      <div className="relative rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background p-8 mb-8">
         <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Avatar className="h-40 w-40 border-4 border-background shadow-xl">
-              <AvatarImage src={user.avatar || "/placeholder.svg"} />
-              <AvatarFallback className="text-4xl">{user.name[0]}</AvatarFallback>
+            <Avatar className="h-32 w-32 ring-4 ring-background shadow-xl">
+              <AvatarImage 
+                src={user?.avatar} 
+                alt={user?.name || "User"}
+                className="object-cover"
+                onError={(e) => {
+                  console.log('Avatar failed to load:', user?.avatar);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <AvatarFallback className="bg-primary/10 text-primary text-4xl">
+                {user?.name?.split(' ').map(n => n[0]).join('') || "U"}
+              </AvatarFallback>
             </Avatar>
           </motion.div>
 
@@ -164,7 +170,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
             </Button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Tabs Navigation */}
       <div className="border-b">
