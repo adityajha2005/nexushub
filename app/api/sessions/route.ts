@@ -6,6 +6,8 @@ import User from "@/models/User"
 import Session from "@/models/Session"
 import { getAvatarUrl } from "@/lib/utils/avatar"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const cookieStore = cookies()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
@@ -25,7 +25,7 @@ const timeSlots = [
   "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"
 ]
 
-export default function BookASession() {
+function BookingForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
@@ -256,4 +256,16 @@ export default function BookASession() {
       </motion.div>
     </div>
   )
+}
+
+export default function BookASessionPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Suspense fallback={<div>Loading...</div>}>
+        <BookingForm />
+      </Suspense>
+    </div>
+  )
 } 
+// </```
+// rewritten_file>

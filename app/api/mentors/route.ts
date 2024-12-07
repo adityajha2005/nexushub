@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { getAvatarUrl } from "@/lib/utils/avatar"
 
+export const dynamic = 'force-dynamic'
+
 // Dummy experience data mapping
 const mentorExperience = {
   "Dr. Emily Chen": 12,

@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { getAvatarUrl } from "@/lib/utils/avatar"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
