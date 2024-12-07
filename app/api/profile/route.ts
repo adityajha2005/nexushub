@@ -10,11 +10,15 @@ export async function GET() {
     const cookieStore = cookies()
     const token = cookieStore.get("token")
 
+    console.log('Token in profile API:', token?.value)
+
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
+    console.log('Decoded token:', decoded)
+
     await connectDB()
     const user = await User.findById(decoded.id).select("-password")
 

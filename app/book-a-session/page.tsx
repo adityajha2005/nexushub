@@ -33,7 +33,8 @@ function BookingForm() {
   const [selectedMentor, setSelectedMentor] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedTime, setSelectedTime] = useState<string>("")
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isBooking, setIsBooking] = useState(false)
 
   useEffect(() => {
     const preselectedMentor = searchParams.get("mentor")
@@ -44,18 +45,20 @@ function BookingForm() {
   }, [searchParams])
 
   const fetchMentors = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch("/api/mentors")
+      if (!response.ok) throw new Error("Failed to fetch mentors")
       const data = await response.json()
       setMentors(data.mentors)
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load mentors",
+        description: "Failed to load mentors. Please try again.",
         variant: "destructive",
       })
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
@@ -69,6 +72,7 @@ function BookingForm() {
       return
     }
 
+    setIsBooking(true)
     try {
       const response = await fetch("/api/sessions", {
         method: "POST",
@@ -80,7 +84,10 @@ function BookingForm() {
         }),
       })
 
-      if (!response.ok) throw new Error("Failed to book session")
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to book session")
+      }
 
       toast({
         title: "Success!",
@@ -90,13 +97,26 @@ function BookingForm() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to book session. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to book session. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsBooking(false)
     }
   }
 
   const selectedMentorData = mentors.find(m => m._id === selectedMentor)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="space-y-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading mentors...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container max-w-5xl py-8 space-y-8">
@@ -249,9 +269,16 @@ function BookingForm() {
         </Button>
         <Button
           onClick={handleBookSession}
-          disabled={!selectedMentor || !selectedDate || !selectedTime}
+          disabled={!selectedMentor || !selectedDate || !selectedTime || isBooking}
         >
-          Book Session
+          {isBooking ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Booking...
+            </>
+          ) : (
+            "Book Session"
+          )}
         </Button>
       </motion.div>
     </div>
