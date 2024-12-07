@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { UserNav } from "@/components/user-nav"
 import { NotificationsMenu } from "@/components/notifications"
 import { Menu, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const router = useRouter()
 
   const checkAuth = async () => {
     try {
@@ -70,12 +72,23 @@ export function Navbar() {
     }
   }, [])
 
+  const handleConnectClick = () => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    // Handle connect logic for authenticated users
+  }
+
   return (
     <div className="h-[64px] fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-full items-center">
         <div className="mr-4 flex items-center justify-between flex-1 md:flex-none">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="font-bold">NEXUSHUB</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🌟</span>
+              <span className="font-bold text-xl">NEXUSHUB</span>
+            </div>
           </Link>
           <Button
             variant="ghost"

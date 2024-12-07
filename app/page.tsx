@@ -8,11 +8,13 @@ import { ReviewAvatars } from "./components/review-avatars"
 import { StatsCard } from "@/components/stats-card"
 import { ArrowRight, ArrowDown, Users, BookOpen, Award } from 'lucide-react'
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false)
   const featuresRef = useRef(null)
   const [isFeaturesSectionVisible, setIsFeaturesSectionVisible] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     setIsVisible(true)
@@ -83,6 +85,15 @@ export default function Home() {
     }
   ]
 
+  const handleConnectClick = () => {
+    const token = document.cookie.includes('token=')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+    router.push('/discover')
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
@@ -139,6 +150,7 @@ export default function Home() {
             >
               <Button 
                 className="group bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-full text-lg relative overflow-hidden"
+                onClick={handleConnectClick}
               >
                 <motion.div
                   className="relative z-10 flex items-center gap-2"

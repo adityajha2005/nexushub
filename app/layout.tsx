@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: 'NEXUSHUB - IT Mentoring Platform',
   description: 'Connect with expert IT mentors for personalized guidance and career growth',
+  icons: {
+    icon: [],  
+  }
 }
 
 export default function RootLayout({
