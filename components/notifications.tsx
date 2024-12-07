@@ -76,6 +76,7 @@ export function NotificationsMenu() {
     
     // Listen for notification updates
     const handleNotificationUpdate = () => {
+      console.log('Notification update event received')
       fetchNotifications()
     }
     

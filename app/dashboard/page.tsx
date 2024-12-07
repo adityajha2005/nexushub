@@ -79,6 +79,8 @@ export default function DashboardPage() {
   }
 
   const handleCancelSession = async (sessionId: string) => {
+    console.log('Attempting to cancel session:', sessionId)
+    
     // Optimistically update UI
     setSessions(prevSessions => 
       prevSessions.map(session => 
@@ -91,11 +93,11 @@ export default function DashboardPage() {
     try {
       const response = await fetch(`/api/sessions/${sessionId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
       })
+
+      const data = await response.json()
+      console.log('Cancel response:', data)
 
       if (!response.ok) {
         // Revert on error
@@ -106,7 +108,6 @@ export default function DashboardPage() {
               : session
           )
         )
-        const data = await response.json()
         throw new Error(data.message || 'Failed to cancel session')
       }
 

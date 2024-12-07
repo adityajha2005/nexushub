@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import Notification from "@/models/Notification"
-import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
+import jwt from "jsonwebtoken"
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const cookieStore = cookies()
     const token = cookieStore.get("token")
@@ -18,12 +18,25 @@ export async function GET(request: Request) {
 
     await connectDB()
 
-    const notifications = await Notification.find({ recipient: userId })
-      .sort({ createdAt: -1 })
-      .populate('sender', 'name avatar')
-      .lean()
+    const notifications = await Notification.find({ 
+      recipient: userId 
+    })
+    .sort({ createdAt: -1 })
+    .populate('sender', 'name avatar')
+    .lean()
 
-    return NextResponse.json({ notifications })
+    return NextResponse.json({ 
+      notifications: notifications.map(notification => ({
+        _id: notification._id,
+        message: notification.message,
+        read: notification.read,
+        createdAt: notification.createdAt,
+        from: {
+          name: notification.sender.name,
+          avatar: notification.sender.avatar
+        }
+      }))
+    })
   } catch (error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json({ 
@@ -33,7 +46,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PUT(request: Request) {
   try {
     const cookieStore = cookies()
     const token = cookieStore.get("token")
@@ -41,6 +54,9 @@ export async function PATCH(request: Request) {
     if (!token) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 })
     }
+
+    const decoded = jwt.verify(token.value, process.env.JWT_SECRET as string) as { id: string }
+    const userId = decoded.id
 
     const { notificationIds } = await request.json()
     
@@ -51,7 +67,10 @@ export async function PATCH(request: Request) {
     await connectDB()
 
     await Notification.updateMany(
-      { _id: { $in: notificationIds } },
+      { 
+        _id: { $in: notificationIds },
+        recipient: userId
+      },
       { $set: { read: true } }
     )
 

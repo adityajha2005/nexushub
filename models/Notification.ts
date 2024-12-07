@@ -11,27 +11,34 @@ const notificationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  type: {
-    type: String,
-    required: true,
-    enum: ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED', 'SESSION_BOOKED', 'SESSION_REMINDER']
-  },
   message: {
     type: String,
     required: true
+  },
+  type: {
+    type: String,
+    enum: ['session_scheduled', 'session_cancelled', 'CONNECTION_REQUEST'],
+    required: true
+  },
+  sessionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Session',
+    required: false
   },
   read: {
     type: Boolean,
     default: false
   },
-  data: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {}
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
+})
+
+notificationSchema.pre('save', function(next) {
+  console.log('Saving notification:', this)
+  next()
 })
 
 const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema)
-
 export default Notification 
