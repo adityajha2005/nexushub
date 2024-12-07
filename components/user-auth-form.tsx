@@ -46,18 +46,33 @@ export function UserAuthForm({ className, type = "login", ...props }: UserAuthFo
 
       const data = await response.json()
 
-      if (!response.ok) {
+      if (!response.ok || data.success === false) {
         throw new Error(data.message || "Authentication failed")
       }
 
-      window.location.href = '/profile'
-      
+      // Show success message
+      toast({
+        title: type === "login" ? "Login Successful" : "Account Created",
+        description: data.message,
+      })
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        if (type === "signup") {
+          window.location.href = '/profile-setup'
+        } else {
+          window.location.href = '/profile'
+        }
+      }, 1000)
+
     } catch (error) {
+      console.error('Auth error:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: error instanceof Error ? error.message : "Authentication failed",
         variant: "destructive",
       })
+    } finally {
       setIsLoading(false)
     }
   }

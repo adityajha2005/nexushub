@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    select: false,
   },
   username: {
     type: String,
@@ -88,6 +89,16 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
+
+// Add method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword: string) {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
+};
 
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 export type NotificationType = typeof notificationTypes[number];

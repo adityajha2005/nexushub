@@ -7,42 +7,59 @@ import jwt from 'jsonwebtoken'
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
+    
+    if (!email || !password) {
+      return NextResponse.json(
+        { message: "Email and password are required" },
+        { status: 400 }
+      )
+    }
 
-    // Connect to database
     await connectDB()
 
-    // Find user
-    const user = await User.findOne({ email })
+    // Find user and explicitly include password
+    const user = await User.findOne({ email }).select('+password')
+    console.log('Found user:', user ? 'Yes' : 'No') // Debug log
+    
     if (!user) {
       return NextResponse.json(
-        { message: "Invalid credentials" },
+        { success: false, message: "Invalid email or password" },
         { status: 401 }
       )
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password)
-    if (!isValidPassword) {
+    // Direct password comparison
+    const isMatch = await bcrypt.compare(password, user.password)
+    console.log('Password match:', isMatch) // Debug log
+    
+    if (!isMatch) {
       return NextResponse.json(
-        { message: "Invalid credentials" },
+        { success: false, message: "Invalid email or password" },
         { status: 401 }
       )
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '7d' }
     )
 
-    // Create response with cookie
     const response = NextResponse.json(
-      { message: "Login successful" },
+      { 
+        success: true,
+        message: "Login successful",
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
+      },
       { status: 200 }
     )
 
-    // Set HTTP-only cookie
+    // Set cookie with proper settings
     response.cookies.set({
       name: 'token',
       value: token,
@@ -54,10 +71,11 @@ export async function POST(request: Request) {
     })
 
     return response
+
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: "An error occurred during login" },
       { status: 500 }
     )
   }

@@ -52,13 +52,13 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           },
         })
 
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type')
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('Server returned non-JSON response')
-        }
-
         const data = await response.json()
+        
+        if (response.status === 401) {
+          // Unauthorized - redirect to login
+          router.push('/login')
+          return
+        }
         
         if (!response.ok) {
           throw new Error(data.message || 'Failed to load profile')
@@ -76,7 +76,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           description: error instanceof Error ? error.message : "Failed to load profile",
           variant: "destructive",
         })
-        router.push('/discover')
+        if (error instanceof Error && error.message.includes('login')) {
+          router.push('/login')
+        } else {
+          router.push('/discover')
+        }
       } finally {
         setLoading(false)
       }
