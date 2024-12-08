@@ -12,7 +12,7 @@ const AVATARS = [
 export function ReviewAvatars() {
   return (
     <div className="flex items-center group">
-      <div className="flex -space-x-3">
+      <div className="flex -space-x-2 sm:-space-x-3">
         {AVATARS.map((avatar, index) => (
           <motion.div
             key={index}
@@ -22,7 +22,7 @@ export function ReviewAvatars() {
             whileHover={{ scale: 1.1, zIndex: 10 }}
             className="relative"
           >
-            <div className="h-8 w-8 rounded-full border-2 border-background overflow-hidden shadow-lg">
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full border-2 border-background overflow-hidden shadow-lg">
               <motion.img
                 className="h-full w-full object-cover"
                 src={avatar}
@@ -38,7 +38,7 @@ export function ReviewAvatars() {
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 }}
-        className="ml-4 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors"
+        className="ml-2 sm:ml-4 text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors"
       >
         +280 reviews
       </motion.span>
