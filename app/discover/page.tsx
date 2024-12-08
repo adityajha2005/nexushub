@@ -118,131 +118,133 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="container py-8">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-8"
-      >
-        <h1 className="text-3xl font-bold">Discover</h1>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Input
-            placeholder="Search by name or skills..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
-          />
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="mentor">Mentors</SelectItem>
-              <SelectItem value="mentee">Mentees</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="container pt-24 pb-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          <h1 className="text-3xl font-bold mb-8">Discover</h1>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              placeholder="Search by name or skills..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-md"
+            />
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="mentor">Mentors</SelectItem>
+                <SelectItem value="mentee">Mentees</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Skills filter */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">Filter by Skills</h2>
-          <NestedSkillsFilter
-            selectedSkills={selectedSkills}
-            onSkillToggle={(skill) => {
-              setSelectedSkills(prev =>
-                prev.includes(skill)
-                  ? prev.filter(s => s !== skill)
-                  : [...prev, skill]
-              )
-            }}
-          />
-        </div>
+          {/* Skills filter */}
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4">Filter by Skills</h2>
+            <NestedSkillsFilter
+              selectedSkills={selectedSkills}
+              onSkillToggle={(skill) => {
+                setSelectedSkills(prev =>
+                  prev.includes(skill)
+                    ? prev.filter(s => s !== skill)
+                    : [...prev, skill]
+                )
+              }}
+            />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AnimatePresence mode="popLayout">
-            {users.map((user, index) => (
-              <motion.div
-                key={user._id}
-                variants={cardVariants}
-                initial="hidden"
-                animate="show"
-                whileHover="hover"
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link href={`/profile/${user._id}`}>
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardHeader className="relative">
-                      <div className="absolute top-4 right-4">
-                        <Badge variant={user.role === 'mentor' ? 'default' : 'secondary'}>
-                          {user.role}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
+              {users.map((user, index) => (
+                <motion.div
+                  key={user._id}
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="show"
+                  whileHover="hover"
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link href={`/profile/${user._id}`}>
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardHeader className="relative">
+                        <div className="absolute top-4 right-4">
+                          <Badge variant={user.role === 'mentor' ? 'default' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                          >
+                            <Avatar className="h-12 w-12 ring-2 ring-background">
+                              <AvatarImage 
+                                src={user.avatar} 
+                                alt={user.name}
+                                className="object-cover"
+                                onError={(e) => {
+                                  console.log('Avatar failed to load:', user.avatar);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {user.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                          </motion.div>
+                          <div>
+                            <CardTitle>{user.name}</CardTitle>
+                            <CardDescription>{user.title || 'Member'}</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <motion.div 
+                          className="flex flex-wrap gap-2"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          {user.skills?.map((skill, index) => (
+                            <motion.div
+                              key={skill}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.1 }}
+                            >
+                              <Badge 
+                                variant="secondary"
+                                className="transition-all hover:scale-105"
+                              >
+                                {skill}
+                              </Badge>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                        <motion.div 
+                          className="mt-4 text-sm text-muted-foreground"
+                          whileHover={{ x: 5 }}
                           transition={{ type: "spring", stiffness: 300 }}
                         >
-                          <Avatar className="h-12 w-12 ring-2 ring-background">
-                            <AvatarImage 
-                              src={user.avatar} 
-                              alt={user.name}
-                              className="object-cover"
-                              onError={(e) => {
-                                console.log('Avatar failed to load:', user.avatar);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {user.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
+                          View Profile →
                         </motion.div>
-                        <div>
-                          <CardTitle>{user.name}</CardTitle>
-                          <CardDescription>{user.title || 'Member'}</CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <motion.div 
-                        className="flex flex-wrap gap-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        {user.skills?.map((skill, index) => (
-                          <motion.div
-                            key={skill}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <Badge 
-                              variant="secondary"
-                              className="transition-all hover:scale-105"
-                            >
-                              {skill}
-                            </Badge>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                      <motion.div 
-                        className="mt-4 text-sm text-muted-foreground"
-                        whileHover={{ x: 5 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        View Profile →
-                      </motion.div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </motion.div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
     </div>
   )
 }

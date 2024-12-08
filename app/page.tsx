@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Navbar } from "@/components/navbar"
 import { ReviewAvatars } from "./components/review-avatars"
 import { ArrowRight, ArrowDown, Users, BookOpen, Award } from 'lucide-react'
 import { motion } from "framer-motion"
@@ -74,11 +73,10 @@ export default function Home() {
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
+      animate={{ opacity: isVisible ? 1 : 0 }} 
       className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20"
     >
-      <Navbar />
-      <main className="container mx-auto px-4 pt-16 sm:pt-24">
+      <main className="container mx-auto px-4 pt-20 sm:pt-24 relative">
         {/* Hero Section */}
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
